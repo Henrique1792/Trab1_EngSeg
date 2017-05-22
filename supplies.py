@@ -74,9 +74,10 @@ class Supplies(object):
             rt^=i
         return rt
 
-    rol = lambda val, r_bits, maxbits: \
-            (val << r_bits % maxbits)& 2**maxbits-1 | ((val & (2**maxbits-1)) >>
-                    (maxbits- (r_bits%maxbits) ))
+
+    rol = lambda val, r_bits, max_bits: \
+                (val << r_bits%max_bits) & (2**max_bits-1) | \
+                    ((val & (2**max_bits-1)) >> (max_bits-(r_bits%max_bits)))
 
     def mixFunction(self, w0, w1):
         rt=[]
