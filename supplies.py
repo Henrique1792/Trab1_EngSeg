@@ -58,7 +58,7 @@ class Supplies(object):
         self.rotationTable[7][3]=35
 
     def getBinString(self, param):
-        return bin(int(binascii.hexlify(param.encode()), 16))
+        return bin(int(binascii.hexlify(param.encode()), 16))[2:]
 
 
     def getBlockList(self, bString):
