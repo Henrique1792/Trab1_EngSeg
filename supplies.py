@@ -9,10 +9,12 @@ import binascii
 
 class Supplies(object):
     rotationTable=None
-    roundCounter=None 
+    dCounter=None 
+    wCounter=None
     def __init__(self):
         self.setRotationTable()
-        self.roundCounter=0
+        self.dCounter=0
+        self.wCounter=0
 
     def setRotationTable(self):
         self.rotationTable=[[0 for x in range(8)] for y in range(8)]
@@ -71,3 +73,12 @@ class Supplies(object):
         for i in range(1, len(strList)):
             rt^=i
         return rt
+
+    rol = lambda val, r_bits, maxbits: \
+            (val << r_bits % maxbits)& 2**maxbits-1 | ((val & (2**maxbits-1)) >>
+                    (maxbits- (r_bits%maxbits) ))
+
+    def mixFunction(self, w0, w1):
+        rt=[]
+        rt.append((w0+w1)%(2^64))
+        rt.append((w1))
