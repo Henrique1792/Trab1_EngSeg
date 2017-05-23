@@ -11,6 +11,10 @@ class Supplies(object):
     rotationTable=None
     dCounter=None 
     wCounter=None
+    rol = lambda val, r_bits, max_bits: \
+                (val << r_bits%max_bits) & (2**max_bits-1) | \
+                    ((val & (2**max_bits-1)) >> (max_bits-(r_bits%max_bits)))
+    
     def __init__(self):
         self.setRotationTable()
         self.dCounter=0
@@ -59,14 +63,16 @@ class Supplies(object):
         self.rotationTable[7][2]=39
         self.rotationTable[7][3]=35
 
+    def getBlockList(self, bString, blocksize):                            
+        rt=[bString[i:i+64] for i in range(0, len(bString), 64)]
+        for i in range( len(rt) ):
+            if(len(rt[i])<64):
+                rt[i] = rt[i].ljust(blocksize,'0')
+        
+        return rt 
+    
     def getBinString(self, param):
         return bin(int(binascii.hexlify(param.encode()), 16))[2:]
-
-
-    def getBlockList(self, bString):
-        rt=None
-        rt=[bString[i:i+64] for i in range(0, len(bString), 64)]
-        return rt
 
     def xorAll(self, strList):
         rt=strList[0]
@@ -75,9 +81,6 @@ class Supplies(object):
         return rt
 
 
-    rol = lambda val, r_bits, max_bits: \
-                (val << r_bits%max_bits) & (2**max_bits-1) | \
-                    ((val & (2**max_bits-1)) >> (max_bits-(r_bits%max_bits)))
 
     def mixFunction(self, w0, w1):
         rt=[]
