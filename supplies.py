@@ -11,6 +11,7 @@ class Supplies(object):
     rotationTable=None
     dCounter=None 
     wCounter=None
+    #Rotate Left
     rol = lambda val, r_bits, max_bits: \
                 (val << r_bits%max_bits) & (2**max_bits-1) | \
                     ((val & (2**max_bits-1)) >> (max_bits-(r_bits%max_bits)))
@@ -84,5 +85,5 @@ class Supplies(object):
 
     def mixFunction(self, w0, w1):
         rt=[]
-        rt.append((w0+w1)%(2^64))
-        rt.append((w1))
+        rt.append((w0+w1)%(2**64))
+        rt.append(self.rol(w1,self.rotationTable[self.dCounter%8][j],))
