@@ -8,9 +8,6 @@ import binascii
 
 
 class Supplies(object):
-    rotationTable=None
-    dCounter=None 
-    wCounter=None
     #Rotate Left
     rol = lambda val, r_bits, max_bits: \
                 (val << r_bits%max_bits) & (2**max_bits-1) | \
