@@ -1,0 +1,186 @@
+#Funções de bitwise:
+
+def xor( a, b ):
+    result = [0] * 8
+    for i in range( 7, -1, -1 ):
+        result[i] = a[i] ^ b[i]
+    return result
+
+def mod( a, b ):
+    result = [0] * 8
+    for i in range( 7, -1, -1 ):
+        result[i] = a[i] & b[i]
+    return result
+
+def add( a, b ):
+    result  = [0] * 8
+    c = 0
+    for i in range( 7, -1, -1 ):
+        result[i] = ( a[i] ^ b[i] ) ^ c
+        c = ( ( a[i] | c ) & b[i] )  | ( a[i] & ( b[i] | c ) )
+    return result
+
+def comp( a ):
+    result = xor( a, [1,1,1,1,1,1,1,1])
+    result = add( result, [0,0,0,0,0,0,0,1])
+    return result
+
+def rol( a, b ):
+    result = [0] * 8
+    q = b % 8
+    for i in range( 7, -1, -1 ):
+        if ( i - q ) >= 0:
+            result[ i - q ] = a[i]
+        else:
+            result[ 8 + i - q ] = a[i]
+    return result
+
+def ror( a, b ):
+    result = [0] * 8
+    q = b % 8
+    for i in range( 7, -1, -1 ):
+        if ( i + q ) < 8:
+            result[ i + q ] = a[i]
+        else:
+            result[ i + q - 8 ] = a[i]
+    return result
+
+#Funções da criptografia em si:
+
+def permute( v, c = True ):
+  aux = [None] * 8
+  if( c ):                  #Note to self: Transformar isso em uma tabela x:y e criar o vetor com uma linha depois.
+    aux[0] = v[2]  #0 - 2
+    aux[1] = v[1]  #1 - 1
+    aux[2] = v[4]  #2 - 4
+    aux[3] = v[7]  #3 - 7
+    aux[4] = v[6]  #4 - 6
+    aux[5] = v[5]  #5 - 5
+    aux[6] = v[0]  #6 - 0
+    aux[7] = v[3]  #7 - 3
+  else:
+    aux[0] = v[6]  #0 - 6
+    aux[1] = v[1]  #1 - 1
+    aux[2] = v[0]  #2 - 0
+    aux[3] = v[7]  #3 - 7
+    aux[4] = v[2]  #4 - 2
+    aux[5] = v[5]  #5 - 5
+    aux[6] = v[4]  #6 - 4
+    aux[7] = v[3]  #7 - 3
+
+  return aux
+
+def mix( x0, x1, j, d, c = True):
+    R = [[46,33,17,44,39,13,25,8],
+        [36,27,49,9,30,50,29,35],
+        [19,14,36,54,34,10,39,56],
+        [37,42,39,56,24,17,43,22]]
+
+    if( c ):
+        y0 = add( x0, x1 )
+        y1 = xor( rol( x1, R[j][d%8] ), y0 )
+    else:
+        y1 = ror( xor(x0, x1), R[j][d%8] )
+        y0 = add(x0, comp( y1 ) ) #sub = add( a, ~b )
+
+    return y0, y1
+
+def key_schedule( k, t ):
+    ks = []
+    kn = to_bit( 0x1BD11BDAA9FC1A22.to_bytes( 8, "big" ) )
+    for i in range( 7 ): #Nw - 1
+        xor( kn[0], k[i])
+    t2 = xor( t[1], t[2] )
+    t.extend(t2)
+    k.extend(kn)
+    for i in range( 19 ): #Nr/4 + 1
+        s = [None] * 8
+        for j in range( 5 ): #Aqui começa a mágia, só acredita que eu fiz certo e já é
+            s[j] = k[ ( i + j ) % 9 ]
+        s[5] =  add( k[ ( i + 5 ) % 9 ], t[ i % 3 ] )
+        s[6] = add( k[ ( i + 6 ) % 9 ], t[ ( i + 1 ) % 3 ] )
+        s[7] = add( k[ ( i + 7 ) % 9 ], to_bit( [i] )[0] )
+        ks.append( s )  #Aqui acaba
+    return ks
+
+
+def Threefish( w, k, t, c = True ):
+    w = to_bit( w )
+    k = to_bit( k )
+    t = to_bit( t )
+    ks = key_schedule( k, t )
+    result = []
+    for k in range( 0, len( w ), 8 ):
+        block = w[k:k+8]
+        if( c ):
+            for i in range( 72 ):
+                if( ( i % 4 ) == 0 ):
+                    for j in range( 8 ):
+                        block[j] = add( block[j], ks[int( i/4 )][j] )
+                for j in range( 4 ):
+                    block[2*j], block[2*j+1] = mix( block[2*j], block[2*j+1], j, i, True )
+                block = permute( block, True )
+        else:
+            for i in range( 71, -1, -1 ):
+                block = permute( block, False )
+                for j in range( 4 ):
+                    block[2*j], block[2*j+1] = mix( block[2*j], block[2*j+1], j, i, False )
+                if( ( i % 4 ) == 0 ):
+                    for j in range( 8 ):
+                        block[j] = add( block[j], comp( ks[int( i/4 )][j] ) )
+        result.extend( block )
+
+    if c:
+        return from_bit( result )
+    else:
+        padwan = ""
+        for digit in from_bit( result ):
+            padwan += chr( digit )
+        return pad( padwan, False )
+
+
+#Esse ficou bonito ;)
+def to_bit( data ):
+    if( isinstance( data, str ) ):
+        data = pad( data )
+        data = [ ord( data[i] ) for i in range( len( data ) ) ]
+    return [ [0] * ( 8 - len( bin( datum )[2:] ) ) + [ 1 if digit=='1' else 0 for digit in bin( datum )[2:] ] for datum in data ]
+
+#Esse nem tanto =/
+def from_bit( data ):
+    result = []
+    for datum in data:
+        c = 0
+        for i in range( 8 ):
+            c += datum[ 7 - i ] << i
+        result.append( c )
+    return result
+
+def pad( w, c = True):
+    result = w * 1
+    if c:
+        i = 8 - ( len( result ) % 8 )
+        if i < 8:
+            result += str(i) * i
+    else:
+        try:
+            p = int( result[-1] )
+            for i in range( -1, -p - 1, -1 ):
+                if( int( result[ i ] ) != p ):
+                    raise
+            result = result[:-p]
+        except:
+            return result #Falha no padding
+
+    return result
+
+def example_use( w = "eu adoro comer merda", k = "gurulhu!", t = "oi"):
+
+    print("Plaintext: ", w, "\nKey: ", k, "\nTweak: ", t )
+    cy = Threefish( w, k, t )
+    print("\nCypher:", [ chr( i ) for i in cy] )
+
+    cy = Threefish( cy, k, t, False )
+    print("\nResult: ", cy )
+
+example_use()
