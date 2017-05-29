@@ -24,9 +24,7 @@ def add( a, b ):
     return result
 
 def comp( a ):
-    result = xor( a, [1,1,1,1,1,1,1,1])
-    result = add( result, [0,0,0,0,0,0,0,1])
-    return result
+    return add( xor( a, [1,1,1,1,1,1,1,1]), [0,0,0,0,0,0,0,1])
 
 def rol( a, b ):
     result = [0] * 8
@@ -51,26 +49,8 @@ def ror( a, b ):
 #Funções da criptografia em si:
 
 def permute( v, c = True ):
-  aux = [None] * 8
-  if( c ):                  #Note to self: Transformar isso em uma tabela x:y e criar o vetor com uma linha depois.
-    aux[0] = v[2]  #0 - 2
-    aux[1] = v[1]  #1 - 1
-    aux[2] = v[4]  #2 - 4
-    aux[3] = v[7]  #3 - 7
-    aux[4] = v[6]  #4 - 6
-    aux[5] = v[5]  #5 - 5
-    aux[6] = v[0]  #6 - 0
-    aux[7] = v[3]  #7 - 3
-  else:
-    aux[0] = v[6]  #0 - 6
-    aux[1] = v[1]  #1 - 1
-    aux[2] = v[0]  #2 - 0
-    aux[3] = v[7]  #3 - 7
-    aux[4] = v[2]  #4 - 2
-    aux[5] = v[5]  #5 - 5
-    aux[6] = v[4]  #6 - 4
-    aux[7] = v[3]  #7 - 3
-
+  p = { True: [2,1,4,7,6,5,0,3], False : [6,1,0,7,2,5,4,3] }
+  aux = [ v[i] for i in p[c] ]
   return aux
 
 def mix( x0, x1, j, d, c = True):
@@ -196,4 +176,17 @@ def example_use( w = "Frase de Exemplo", k = "gurulhu!", t = "oi"):
     cy = Threefish( cy, k, t, False )
     print("\nResult: ", cy )
 
-example_use()
+if __name__ == "__main__":
+    import sys
+    if len( sys.argv ) < 5:
+        print("Usage: threefish [plaintext] [key] [tweak] [encript]")
+    else:
+        with open( sys.argv[1] ) as plainfile:
+            plaintext = plainfile.read()
+        if( sys.argv[4] in ["FALSE", "False", "false", "F", "f", "0", "D", "U", "d", "u", 0]  ):
+            print( Threefish( w = plaintext, k = sys.argv[2], t = sys.argv[3], c = False ) )
+        else:
+            cyphertext = ""
+            for digit in Threefish( w = plaintext, k = sys.argv[2], t = sys.argv[3] ):
+                cyphertext += chr( digit )
+            print( cyphertext )
