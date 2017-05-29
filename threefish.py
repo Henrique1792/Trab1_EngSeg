@@ -1,4 +1,7 @@
 #Funções de bitwise:
+#Como tivemos problemas de tipagem, utilizamos um tipo próprio para a criptografia
+#No caso, um array de 1s e 0s representando bits.
+#E, claro, tivemos que criar operadores pra agir sobre esse novo "tipo".
 
 def xor( a, b ):
     result = [0] * 8
@@ -74,7 +77,7 @@ def mix( x0, x1, j, d, c = True):
     R = [[46,33,17,44,39,13,25,8],
         [36,27,49,9,30,50,29,35],
         [19,14,36,54,34,10,39,56],
-        [37,42,39,56,24,17,43,22]]
+        [37,42,39,56,24,17,43,22]] #Mais constantes fixas da descrição do algorítmo
 
     if( c ):
         y0 = add( x0, x1 )
@@ -87,7 +90,7 @@ def mix( x0, x1, j, d, c = True):
 
 def key_schedule( k, t ):
     ks = []
-    kn = to_bit( 0x1BD11BDAA9FC1A22.to_bytes( 8, "big" ) )
+    kn = to_bit( 0x1BD11BDAA9FC1A22.to_bytes( 8, "big" ) ) #Tem um pq dessa constante em específico no pdf do algorítmo. É basicamente um nothing-up-my-sleeve number.
     for i in range( 7 ): #Nw - 1
         xor( kn[0], k[i])
     t2 = xor( t[1], t[2] )
@@ -95,14 +98,18 @@ def key_schedule( k, t ):
     k.extend(kn)
     for i in range( 19 ): #Nr/4 + 1
         s = [None] * 8
-        for j in range( 5 ): #Aqui começa a mágia, só acredita que eu fiz certo e já é
+        for j in range( 5 ):
             s[j] = k[ ( i + j ) % 9 ]
         s[5] =  add( k[ ( i + 5 ) % 9 ], t[ i % 3 ] )
         s[6] = add( k[ ( i + 6 ) % 9 ], t[ ( i + 1 ) % 3 ] )
         s[7] = add( k[ ( i + 7 ) % 9 ], to_bit( [i] )[0] )
-        ks.append( s )  #Aqui acaba
+        ks.append( s )
     return ks
 
+#Algoritmo implementado a partir das instruções oficiais, disponiveis em:
+#https://www.schneier.com/academic/paperfiles/skein1.3.pdf
+#Nossa sugestão para melhorar seria adicionar um timestamp junto a mensagem a ser cifrada, que seria análisado pela aplicação.
+#Isso impediria cópias de mensagens sniffadas.
 
 def Threefish( w, k, t, c = True ):
     w = to_bit( w )
@@ -138,6 +145,9 @@ def Threefish( w, k, t, c = True ):
             padwan += chr( digit )
         return pad( padwan, False )
 
+#Abaixo, funções de conversão de string/int para um vetor de bits.
+#Por problemas de tipagem, bytes davam erro no endereçamento, strings nas operações, e inteiros no numero de casas.
+#(BTW, a função nativa bin() retorna uma string, por isso tive q fazer na mão)
 
 #Esse ficou bonito ;)
 def to_bit( data ):
@@ -156,6 +166,9 @@ def from_bit( data ):
         result.append( c )
     return result
 
+#Padding especial que eu vi por aí mas não lembro o nome
+#Adiciona como algarismo de pad o numero de casas cobertas, assim nunca exclui um caractér errado
+#(Exceto caso a frase termine com um "1" e seja múltiplo de 8. Mas é bem mais border q acabar com 0, dos pads normais)
 def pad( w, c = True):
     result = w * 1
     if c:
@@ -174,7 +187,7 @@ def pad( w, c = True):
 
     return result
 
-def example_use( w = "eu adoro comer merda", k = "gurulhu!", t = "oi"):
+def example_use( w = "Frase de Exemplo", k = "gurulhu!", t = "oi"):
 
     print("Plaintext: ", w, "\nKey: ", k, "\nTweak: ", t )
     cy = Threefish( w, k, t )
