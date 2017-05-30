@@ -181,12 +181,11 @@ if __name__ == "__main__":
     if len( sys.argv ) < 5:
         print("Usage: threefish [plaintext] [key] [tweak] [encript]")
     else:
-        with open( sys.argv[1] ) as plainfile:
-            plaintext = plainfile.read()
         if( sys.argv[4] in ["FALSE", "False", "false", "F", "f", "0", "D", "U", "d", "u", 0]  ):
+            with open( sys.argv[1] ) as plainfile:
+                plaintext = [ int( c ) for c in plainfile.readlines() ]
             print( Threefish( w = plaintext, k = sys.argv[2], t = sys.argv[3], c = False ) )
         else:
-            cyphertext = ""
-            for digit in Threefish( w = plaintext, k = sys.argv[2], t = sys.argv[3] ):
-                cyphertext += chr( digit )
-            print( cyphertext )
+            with open( sys.argv[1] ) as plainfile:
+                plaintext = plainfile.read()
+            [ print( c ) for c in Threefish( w = plaintext, k = sys.argv[2], t = sys.argv[3] ) ]
