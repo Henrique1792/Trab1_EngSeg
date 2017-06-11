@@ -72,7 +72,7 @@ def key_schedule( k, t ):
     ks = []
     kn = to_bit( 0x1BD11BDAA9FC1A22.to_bytes( 8, "big" ) ) #Tem um pq dessa constante em específico no pdf do algorítmo. É basicamente um nothing-up-my-sleeve number.
     for i in range( 7 ): #Nw - 1
-        xor( kn[0], k[i])
+        kn = xor( kn[0], k[i])
     t2 = xor( t[1], t[2] )
     t.extend(t2)
     k.extend(kn)
